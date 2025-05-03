@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
-from app.models.base import Base, intpk, str100
+from app.models.base import Base, uuidpk, str100
 from datetime import datetime, timezone
 from sqlalchemy.orm import relationship
 
@@ -15,7 +15,7 @@ from sqlalchemy.orm import relationship
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_base"
 
-    id: Mapped[intpk]
+    id: Mapped[uuidpk]
     custom_ai_id: Mapped[int] = mapped_column(ForeignKey("custom_ai.id"), nullable=False)
     update_version: Mapped[int] = mapped_column(default=0)
     content: Mapped[str] = mapped_column(Text, nullable=False)

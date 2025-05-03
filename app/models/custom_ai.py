@@ -9,13 +9,13 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 
-from app.models.base import Base, intpk
+from app.models.base import Base, uuidpk
 
 
 class CustomAI(Base):
     __tablename__ = "custom_ai"
 
-    id: Mapped[intpk]
+    id: Mapped[uuidpk]
     model: Mapped[str | None] = mapped_column(String(255))
     
     knowledge_items: Mapped[list["KnowledgeBase"]] = relationship(

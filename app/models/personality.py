@@ -9,12 +9,12 @@ from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, timezone
 
-from app.models.base import Base, intpk, str100
+from app.models.base import Base, uuidpk, str100
 
 class Personality(Base):
     __tablename__ = "personality"
 
-    id: Mapped[intpk]
+    id: Mapped[uuidpk]
     custom_ai_id: Mapped[int] = mapped_column(
         ForeignKey("custom_ai.id"), nullable=False, unique=True 
     )
