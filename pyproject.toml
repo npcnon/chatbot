@@ -23,6 +23,7 @@ mypy = "1.15.0"
 black = "25.1.0"
 pytest = "8.3.5"
 pre-commit = "4.2.0"
+sqlalchemy2-stubs = "^0.0.2a38"
 
 
 [tool.black]

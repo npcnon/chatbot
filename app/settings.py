@@ -1,7 +1,7 @@
 import secrets
 from functools import lru_cache
 
-from pydantic import PostgresDsn
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_PORT: int
     POSTGRES_DB: str
-    POSTGRES_URL: PostgresDsn
+    POSTGRES_URL: str
 
     PGADMIN_EMAIL: str
     PGADMIN_PASSWORD: str
@@ -24,12 +24,12 @@ class Settings(BaseSettings):
     DATE_FORMAT: str = "%Y-%m-%d"
 
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "FastAPI Genesis API Docs"
+    PROJECT_NAME: str = "CHATBOT"
 
 
 @lru_cache
 def get_settings():
-    return Settings()  # type: ignore
+    return Settings()  
 
 
 settings = get_settings()

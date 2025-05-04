@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +17,7 @@ class UserDao(BaseDao):
         await self.session.refresh(_user)
         return _user
 
-    async def get_by_id(self, user_id: int) -> User | None:
+    async def get_by_id(self, user_id: UUID) -> User | None:
         statement = select(User).where(User.id == user_id)
         return await self.session.scalar(statement=statement)
 
@@ -33,7 +34,7 @@ class UserDao(BaseDao):
         await self.session.execute(delete(User))
         await self.session.commit()
 
-    async def delete_by_id(self, user_id: int) -> User | None:
+    async def delete_by_id(self, user_id: UUID) -> User | None:
         _user = await self.get_by_id(user_id=user_id)
         statement = delete(User).where(User.id == user_id)
         await self.session.execute(statement=statement)
