@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
-
+from uuid import UUID
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -13,7 +13,7 @@ class UserIn(UserBase):
 
 
 class UserOut(UserBase):
-    id: int
+    id: UUID
 
 
 class ChangePasswordIn(BaseModel):
