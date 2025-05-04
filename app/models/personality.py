@@ -9,14 +9,14 @@ from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, timezone
 
-from app.models.base import Base, uuidpk, str100
+from app.models.base import Base, uuidpk,uuidfk
 
 class Personality(Base):
     __tablename__ = "personality"
 
     id: Mapped[uuidpk]
-    custom_ai_id: Mapped[int] = mapped_column(
-        ForeignKey("custom_ai.id"), nullable=False, unique=True 
+    custom_ai_id: Mapped[uuidfk] = mapped_column(
+        ForeignKey("custom_ai.id", ondelete='CASCADE'), nullable=False, unique=True 
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     source: Mapped[str | None] = mapped_column(String(255))
@@ -26,4 +26,7 @@ class Personality(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    custom_ai: Mapped["CustomAI"] = relationship(back_populates="personality")
+    custom_ai: Mapped["CustomAI"] = relationship(
+        back_populates="personality",
+        single_parent=True
+    )
