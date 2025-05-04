@@ -1,9 +1,9 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Response, Cookie, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-
-from datetime import timedelta
-from typing import Annotated
+from uuid import UUID
+from datetime import datetime, timedelta
+from typing import Annotated, Optional
 
 from jose import JWTError, jwt
 from loguru import logger
@@ -14,7 +14,7 @@ from app.db import get_session
 from app.models.user import User as UserModel
 from app.schemas.token import Token, TokenData
 from app.schemas.user import ChangePasswordIn, UserIn, UserOut
-from app.services.utils import UtilsService, oauth2_scheme
+from app.services.utils import UtilsService
 from app.settings import settings
 
 
@@ -50,7 +50,7 @@ class UserService:
         return _user if _user else None
 
     @staticmethod
-    async def login(form_data: OAuth2PasswordRequestForm, session: AsyncSession) -> Token:
+    async def login(form_data: OAuth2PasswordRequestForm, session: AsyncSession, response: Response) -> Token:
         _user = await UserService.authenticate_user(session, form_data.username, form_data.password)
         if not _user:
             raise HTTPException(
@@ -58,35 +58,154 @@ class UserService:
                 detail="Incorrect email or password",
             )
 
+        # Create access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = UtilsService.create_access_token(data={"sub": _user.email}, expires_delta=access_token_expires)
+        access_token = UtilsService.create_access_token(
+            data={"sub": _user.email, "type": "access"}, 
+            expires_delta=access_token_expires
+        )
+        
+        # Create refresh token with longer expiration
+        refresh_token_expires = timedelta(days=7)  # Typically longer than access token
+        refresh_token = UtilsService.create_access_token(
+            data={"sub": _user.email, "type": "refresh"},
+            expires_delta=refresh_token_expires
+        )
+
+        # Set cookies
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,  # For HTTPS
+            samesite="lax",  # Prevents CSRF
+            max_age=access_token_expires.total_seconds(),
+            path="/"
+        )
+        
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=refresh_token_expires.total_seconds(),
+            path="/api/v1/user/refresh"  # Only sent to refresh endpoint
+        )
+        
+        # Also return tokens in the response body for initial setup
         token_data = {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "Bearer",
         }
         return Token(**token_data)
 
     @staticmethod
-    async def get_current_user(
+    async def refresh_token(
+        refresh_token: str = Cookie(None),
         session: AsyncSession = Depends(get_session),
-        token: str = Depends(oauth2_scheme),
-    ) -> UserModel:
+        response: Response = None,
+    ) -> Token:
+        """
+        Endpoint to refresh the access token using a valid refresh token
+        """
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+        if not refresh_token:
+            raise credentials_exception
+            
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             email: str = payload.get("sub")
-            if not email:
+            token_type: str = payload.get("type")
+            
+            if not email or token_type != "refresh":
                 raise credentials_exception
+                
+            _user = await user.UserDao(session).get_by_email(email=email)
+            if not _user:
+                raise credentials_exception
+                
+            # Create new access token
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = UtilsService.create_access_token(
+                data={"sub": _user.email, "type": "access"}, 
+                expires_delta=access_token_expires
+            )
+            
+            # Set new access token in cookie
+            if response:
+                response.set_cookie(
+                    key="access_token",
+                    value=access_token,
+                    httponly=True,
+                    secure=True,
+                    samesite="lax",
+                    max_age=access_token_expires.total_seconds(),
+                    path="/"
+                )
+            
+            # Return new access token
+            token_data = {
+                "access_token": access_token,
+                "token_type": "Bearer",
+            }
+            return Token(**token_data)
+            
+        except JWTError:
+            raise credentials_exception
+
+    @staticmethod
+    async def logout(response: Response):
+        """
+        Clear authentication cookies
+        """
+        response.delete_cookie(key="access_token", path="/")
+        response.delete_cookie(key="refresh_token", path="/api/v1/user/refresh")
+        
+        return JSONResponse(
+            content={"message": "Logged out successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    @staticmethod
+    async def get_current_user(
+        session: AsyncSession = Depends(get_session),
+        access_token: str = Cookie(None),
+    ) -> UserModel:
+        """
+        Get the current user from the access token cookie
+        """
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+        if not access_token:
+            raise credentials_exception
+            
+        try:
+            payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            email: str = payload.get("sub")
+            token_type: str = payload.get("type")
+            
+            if not email or token_type != "access":
+                raise credentials_exception
+                
             token_data = TokenData(email=email)
         except JWTError:
             raise credentials_exception
+            
         _user = await user.UserDao(session).get_by_email(email=token_data.email)
         if not _user:
             raise credentials_exception
+            
         return _user
 
     @staticmethod
@@ -122,7 +241,7 @@ class UserService:
         )
 
     @staticmethod
-    async def get_user_by_id(user_id: int, session: AsyncSession) -> UserOut:
+    async def get_user_by_id(user_id: UUID, session: AsyncSession) -> UserOut:
         _user = await user.UserDao(session).get_by_id(user_id)
         if not _user:
             raise HTTPException(
@@ -132,7 +251,7 @@ class UserService:
         return UserOut.model_validate(_user)
 
     @staticmethod
-    async def delete_user_by_id(user_id: int, session: AsyncSession):
+    async def delete_user_by_id(user_id: UUID, session: AsyncSession):
         _user = await user.UserDao(session).delete_by_id(user_id)
         if not _user:
             raise HTTPException(

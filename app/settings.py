@@ -1,5 +1,6 @@
 import secrets
 from functools import lru_cache
+from typing import List
 
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,7 +26,12 @@ class Settings(BaseSettings):
 
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "CHATBOT"
-
+    CORS_ORIGINS: List[str] = [  
+        "http://localhost:3000"
+    ]
+    # COOKIE_DOMAIN = None  # Set to your domain in production (e.g. ".example.com")
+    # COOKIE_SECURE = False  # Set to True in production for HTTPS only
+    # COOKIE_SAMESITE = "lax"  # Options: "lax", "strict", or "none" (with secure=True)
 
 @lru_cache
 def get_settings():

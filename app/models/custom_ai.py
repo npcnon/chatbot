@@ -18,8 +18,11 @@ class CustomAI(Base):
     id: Mapped[uuidpk]
     user_id: Mapped[uuidfk] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False, unique=True)
 
-    model: Mapped[str | None] = mapped_column(String(255))
-    
+    ai_model: Mapped[str] = mapped_column(
+        String(255), 
+        default="mistralai/Mistral-7B-Instruct-v0.3",
+        server_default="mistralai/Mistral-7B-Instruct-v0.3"
+    )    
     knowledge_items: Mapped[list["KnowledgeBase"]] = relationship(
         back_populates="custom_ai",
         cascade="all, delete-orphan",
