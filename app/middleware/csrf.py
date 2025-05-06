@@ -1,5 +1,6 @@
 from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import APIKeyCookie
+from fastapi.responses import JSONResponse
 from typing import Callable, Optional
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
@@ -75,14 +76,16 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         
         # If we don't have both tokens, deny access
         if not csrf_token_header or not csrf_token_cookie:
-            return Response(
+            # Use JSONResponse instead of Response for JSON content
+            return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={"detail": "CSRF token missing or invalid"},
             )
             
         # Verify tokens match
         if csrf_token_header != csrf_token_cookie:
-            return Response(
+            # Use JSONResponse here as well
+            return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={"detail": "CSRF token verification failed"},
             )

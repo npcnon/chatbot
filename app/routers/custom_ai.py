@@ -18,7 +18,6 @@ async def create_custom_ai(
     session: AsyncSession = Depends(get_session),
 ):
     """Create a new custom AI for the current user"""
-    # Ensure the user is creating an AI for themselves
     if str(custom_ai_data.user_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

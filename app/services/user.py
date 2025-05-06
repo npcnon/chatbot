@@ -10,48 +10,68 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.daos import user
+from app.daos.custom_ai import CustomAIDao
 from app.db import get_session
 from app.models.user import User as UserModel
+from app.schemas.custom_ai import CustomAICreate
 from app.schemas.token import Token, TokenData
 from app.schemas.user import ChangePasswordIn, UserIn, UserOut
+from app.services.custom_ai import CustomAIService
+
 from app.services.utils import UtilsService
 from app.settings import settings
 
 
 class UserService:
-    @staticmethod
-    async def register_user(user_data: UserIn, session: AsyncSession):
-        user_exist = await UserService.user_email_exists(session, user_data.email)
 
+    def __init__(self, session: AsyncSession):
+        self.user_dao = user.UserDao(session)
+        self.session = session
+        self.custom_ai_service = CustomAIService(session)
+        
+    async def register_user(self, user_data: UserIn):
+        # Check existence before transaction
+        user_exist = await self.user_email_exists(user_data.email)
         if user_exist:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User with the given email already exists!!!",
+                detail="User already exists",
             )
 
-        user_data.password = UtilsService.get_password_hash(user_data.password)
-        new_user = await user.UserDao(session).create(user_data.model_dump())
-        logger.info(f"New user created successfully: {new_user}!!!")
-        return JSONResponse(
-            content={"message": "User created successfully"},
-            status_code=status.HTTP_201_CREATED,
-        )
+        try:
 
-    @staticmethod
-    async def authenticate_user(session: AsyncSession, email: str, password: str) -> UserModel | bool:
-        _user = await user.UserDao(session).get_by_email(email)
+            user_data.password = UtilsService.get_password_hash(user_data.password)
+            new_user = await self.user_dao.create(user_data.model_dump())
+            
+            # Create custom AI
+            custom_ai_data = CustomAICreate(user_id=new_user.id)
+            await self.custom_ai_service.create_custom_ai(custom_ai_data)
+            
+   
+            return JSONResponse(
+                content={"message": "User created successfully"},
+                status_code=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logger.error(f"Failed during registration: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to complete registration"
+            )
+
+    async def authenticate_user(self, email: str, password: str) -> UserModel | bool:
+        _user = await self.user_dao.get_by_email(email)
         if not _user or not UtilsService.verify_password(password, _user.password):
             return False
         return _user
 
-    @staticmethod
-    async def user_email_exists(session: AsyncSession, email: str) -> UserModel | None:
-        _user = await user.UserDao(session).get_by_email(email)
+    async def user_email_exists(self, email: str) -> UserModel | None:
+        _user = await self.user_dao.get_by_email(email)
         return _user if _user else None
 
-    @staticmethod
-    async def login(form_data: OAuth2PasswordRequestForm, session: AsyncSession, response: Response) -> Token:
-        _user = await UserService.authenticate_user(session, form_data.username, form_data.password)
+    async def login(self, form_data: OAuth2PasswordRequestForm, response: Response) -> Token:
+        _user = await self.authenticate_user(form_data.username, form_data.password)
         if not _user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -101,12 +121,7 @@ class UserService:
         }
         return Token(**token_data)
 
-    @staticmethod
-    async def refresh_token(
-        refresh_token: str = Cookie(None),
-        session: AsyncSession = Depends(get_session),
-        response: Response = None,
-    ) -> Token:
+    async def refresh_token(self, refresh_token: str, response: Response = None) -> Token:
         """
         Endpoint to refresh the access token using a valid refresh token
         """
@@ -127,7 +142,7 @@ class UserService:
             if not email or token_type != "refresh":
                 raise credentials_exception
                 
-            _user = await user.UserDao(session).get_by_email(email=email)
+            _user = await self.user_dao.get_by_email(email=email)
             if not _user:
                 raise credentials_exception
                 
@@ -160,8 +175,7 @@ class UserService:
         except JWTError:
             raise credentials_exception
 
-    @staticmethod
-    async def logout(response: Response):
+    async def logout(self, response: Response):
         """
         Clear authentication cookies
         """
@@ -173,11 +187,7 @@ class UserService:
             status_code=status.HTTP_200_OK,
         )
 
-    @staticmethod
-    async def get_current_user(
-        session: AsyncSession = Depends(get_session),
-        access_token: str = Cookie(None),
-    ) -> UserModel:
+    async def get_current_user(self, access_token: str) -> UserModel:
         """
         Get the current user from the access token cookie
         """
@@ -202,47 +212,39 @@ class UserService:
         except JWTError:
             raise credentials_exception
             
-        _user = await user.UserDao(session).get_by_email(email=token_data.email)
+        _user = await self.user_dao.get_by_email(email=token_data.email)
         if not _user:
             raise credentials_exception
             
         return _user
 
-    @staticmethod
-    async def get_all_users(session: AsyncSession) -> list[UserOut]:
-        all_users = await user.UserDao(session).get_all()
+    async def get_all_users(self) -> list[UserOut]:
+        all_users = await self.user_dao.get_all()
         return [UserOut.model_validate(_user) for _user in all_users]
 
-    @staticmethod
-    async def delete_all_users(session: AsyncSession):
-        await user.UserDao(session).delete_all()
+    async def delete_all_users(self):
+        await self.user_dao.delete_all()
         return JSONResponse(
             content={"message": "All users deleted successfully!!!"},
             status_code=status.HTTP_200_OK,
         )
 
-    @staticmethod
-    async def change_password(
-        password_data: ChangePasswordIn,
-        current_user: UserModel,
-        session: AsyncSession = Depends(get_session),
-    ):
+    async def change_password(self, password_data: ChangePasswordIn, current_user: UserModel):
         if not UtilsService.verify_password(password_data.old_password, current_user.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Incorrect old password!!!",
             )
         current_user.password = UtilsService.get_password_hash(password_data.new_password)
-        session.add(current_user)
-        await session.commit()
+        self.session.add(current_user)
+        await self.session.commit()
         return JSONResponse(
             content={"message": "Password updated successfully!!!"},
             status_code=status.HTTP_200_OK,
         )
 
-    @staticmethod
-    async def get_user_by_id(user_id: UUID, session: AsyncSession) -> UserOut:
-        _user = await user.UserDao(session).get_by_id(user_id)
+    async def get_user_by_id(self, user_id: UUID) -> UserOut:
+        _user = await self.user_dao.get_by_id(user_id)
         if not _user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -250,9 +252,8 @@ class UserService:
             )
         return UserOut.model_validate(_user)
 
-    @staticmethod
-    async def delete_user_by_id(user_id: UUID, session: AsyncSession):
-        _user = await user.UserDao(session).delete_by_id(user_id)
+    async def delete_user_by_id(self, user_id: UUID):
+        _user = await self.user_dao.delete_by_id(user_id)
         if not _user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -264,4 +265,13 @@ class UserService:
         )
 
 
-CurrentUserDep = Annotated[UserModel, Depends(UserService.get_current_user)]
+# Create a dependency for getting the current user
+async def get_current_user(
+    session: AsyncSession = Depends(get_session),
+    access_token: str = Cookie(None),
+) -> UserModel:
+    user_service = UserService(session)
+    return await user_service.get_current_user(access_token)
+
+
+CurrentUserDep = Annotated[UserModel, Depends(get_current_user)]
