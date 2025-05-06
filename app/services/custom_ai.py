@@ -1,4 +1,5 @@
 from uuid import UUID
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.daos.custom_ai import CustomAIDao
 from app.daos.personality import PersonalityDao
@@ -8,11 +9,15 @@ from app.schemas.custom_ai import CustomAICreate, CustomAIUpdate, CustomAIWithRe
 
 
 class CustomAIService:
+    
     def __init__(self, session: AsyncSession):
         self.custom_ai_dao = CustomAIDao(session)
         self.personality_dao = PersonalityDao(session)  # Assuming you have this DAO
         self.knowledge_base_dao = KnowledgeBaseDao(session)  # Assuming you have this DAO
         self.session = session
+
+
+
 
     async def create_custom_ai(self, custom_ai_data: CustomAICreate) -> CustomAI:
         """Create a new custom AI"""

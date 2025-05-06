@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # Add CSRF protection middleware
-app.add_middleware(CSRFMiddleware)
+# app.add_middleware(CSRFMiddleware)
 
 # Include API router (existing code)
 app.include_router(api_router)

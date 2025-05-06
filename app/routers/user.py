@@ -13,13 +13,14 @@ from app.middleware.csrf import csrf_protection
 
 router = APIRouter(prefix="/user", tags=["user"])
 
-
+#TODO: test user, also fix method not allowed on routes
 @router.post("/register", status_code=201)
 async def register_user(
     user_data: UserIn,
     session: AsyncSession = Depends(get_session),
 ):
-    return await UserService.register_user(user_data, session)
+    user_service = UserService(session)
+    return await user_service.register_user(user_data)
 
 
 @router.post("/token", response_model=Token)
@@ -44,7 +45,8 @@ async def login(
     )
     
     # Log in and set auth cookies
-    token = await UserService.login(form_data, session, response)
+    user_service = UserService(session)
+    token = await user_service.login(form_data, response)
     
     # Include CSRF token in response
     return {
@@ -61,13 +63,18 @@ async def refresh_token(
     refresh_token: str = Cookie(None),
 ):
     """Endpoint to refresh the access token"""
-    return await UserService.refresh_token(refresh_token, session, response)
+    user_service = UserService(session)
+    return await user_service.refresh_token(refresh_token, response)
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(
+    response: Response,
+    session: AsyncSession = Depends(get_session),
+):
     """Logout endpoint that clears auth cookies"""
-    return await UserService.logout(response)
+    user_service = UserService(session)
+    return await user_service.logout(response)
 
 
 @router.get("/me", response_model=UserOut)
@@ -85,7 +92,8 @@ async def change_password(
     x_csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
 ):
     """Change user password with CSRF protection"""
-    return await UserService.change_password(password_data, current_user, session)
+    user_service = UserService(session)
+    return await user_service.change_password(password_data, current_user)
 
 
 # Admin routes - should be protected with additional role check
@@ -95,18 +103,20 @@ async def get_all_users(
     session: AsyncSession = Depends(get_session),
 ):
     # TODO: Add role check here
-    return await UserService.get_all_users(session)
+    user_service = UserService(session)
+    return await user_service.get_all_users()
 
 
 @router.delete("/all")
 async def delete_all_users(
     current_user: CurrentUserDep,  # Only authenticated users
     session: AsyncSession = Depends(get_session),
-    csrf_check: None = Depends(csrf_protection),
-    x_csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
+    # csrf_check: None = Depends(csrf_protection),
+    # x_csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
 ):
     # TODO: Add role check here
-    return await UserService.delete_all_users(session)
+    user_service = UserService(session)
+    return await user_service.delete_all_users()
 
 
 @router.get("/{user_id}", response_model=UserOut)
@@ -116,7 +126,8 @@ async def get_user_by_id(
     session: AsyncSession = Depends(get_session),
 ):
     # TODO: Add role check or self check here
-    return await UserService.get_user_by_id(user_id, session)
+    user_service = UserService(session)
+    return await user_service.get_user_by_id(user_id)
 
 
 @router.delete("/{user_id}")
@@ -128,4 +139,5 @@ async def delete_user_by_id(
     x_csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
 ):
     # TODO: Add role check or self check here
-    return await UserService.delete_user_by_id(user_id, session)
+    user_service = UserService(session)
+    return await user_service.delete_user_by_id(user_id)
