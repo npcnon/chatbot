@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     DATE_FORMAT: str = "%Y-%m-%d"
 
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "CHATBOT"
+    PROJECT_NAME: str = "CHATBOT(DEMO VERSION)"
     CORS_ORIGINS: List[str] = [  
         "http://localhost:3000"
     ]
