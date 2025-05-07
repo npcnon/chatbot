@@ -7,7 +7,7 @@ readme = "README.md"
 
 
 [tool.poetry.dependencies]
-python = "^3.13.1"
+python = "^3.11.11"
 alembic = "1.15.2"
 loguru = "0.7.3"
 fastapi = { extras = ["all"], version = "0.115.12" }
@@ -31,7 +31,7 @@ sqlalchemy2-stubs = "^0.0.2a38"
 
 [tool.black]
 line-length = 120
-target-version = ['py310']
+target-version = ['py311']
 include = '\.pyi?$'
 exclude-extend = '''
 /venv
