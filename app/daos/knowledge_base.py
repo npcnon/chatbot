@@ -20,9 +20,10 @@ class KnowledgeBaseDao(BaseDao):
         statement = select(KnowledgeBase).where(KnowledgeBase.id == knowledge_base_id)
         return await self.session.scalar(statement=statement)
 
-    async def get_by_ai_id(self, ai_id) -> KnowledgeBase | None:
-        statement = select(KnowledgeBase).where(KnowledgeBase.custom_ai_id == ai_id)
-        return await self.session.scalar(statement=statement)
+    async def get_by_ai_id(self, ai_id) -> list[KnowledgeBase] | None:
+        statement = select(KnowledgeBase).where(KnowledgeBase.custom_ai_id == ai_id).order_by(KnowledgeBase.id)
+        result = await self.session.execute(statement=statement)
+        return result.scalars().all()
 
     async def get_all(self) -> list[KnowledgeBase]:
         statement = select(KnowledgeBase).order_by(KnowledgeBase.id)
