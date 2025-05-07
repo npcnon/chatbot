@@ -16,6 +16,9 @@ passlib = { extras = ["bcrypt"], version = "1.7.4" }
 sqlalchemy = "2.0.40"
 pydantic = "2.11.3"
 asyncpg = "^0.30.0"
+langchain-huggingface = "^0.1.2"
+python-dotenv = "^1.1.0"
+aiohttp = "^3.11.18"
 
 [tool.poetry.group.dev.dependencies]
 isort = "6.0.1"
