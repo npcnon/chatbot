@@ -1,49 +1,51 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
 from app.models.user import User
 from app.schemas.custom_ai import CustomAICreate, CustomAIUpdate, CustomAIOut, CustomAIWithRelations
 from app.services.custom_ai import CustomAIService
-from app.services.user import UserService
+from app.services.user import CurrentUserDep
 
 router = APIRouter(prefix="/custom-ai", tags=["custom-ai"])
 
 
-@router.post("/", response_model=CustomAIOut, status_code=status.HTTP_201_CREATED)
-async def create_custom_ai(
-    custom_ai_data: CustomAICreate,
-    current_user: User = Depends(UserService.get_current_user),
-    session: AsyncSession = Depends(get_session),
-):
-    """Create a new custom AI for the current user"""
-    if str(custom_ai_data.user_id) != str(current_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only create a custom AI for your own account"
-        )
+# @router.post("/", response_model=CustomAIOut, status_code=status.HTTP_201_CREATED)
+# async def create_custom_ai(
+#     custom_ai_data: CustomAICreate,
+#     current_user: User = Depends(UserService.get_current_user),
+#     session: AsyncSession = Depends(get_session),
+# ):
+#     """Create a new custom AI for the current user"""
+#     if str(custom_ai_data.user_id) != str(current_user.id):
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="You can only create a custom AI for your own account"
+#         )
         
-    custom_ai_service = CustomAIService(session)
+#     custom_ai_service = CustomAIService(session)
     
-    # Check if user already has a custom AI
-    existing_ai = await custom_ai_service.get_custom_ai_by_user_id(current_user.id)
-    if existing_ai:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has a custom AI"
-        )
+#     # Check if user already has a custom AI
+#     existing_ai = await custom_ai_service.get_custom_ai_by_user_id(current_user.id)
+#     if existing_ai:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="User already has a custom AI"
+#         )
     
-    return await custom_ai_service.create_custom_ai(custom_ai_data)
+#     return await custom_ai_service.create_custom_ai(custom_ai_data)
 
 
 @router.get("/me", response_model=CustomAIOut)
 async def get_my_custom_ai(
-    current_user: User = Depends(UserService.get_current_user),
+    current_user: CurrentUserDep,  
     session: AsyncSession = Depends(get_session),
 ):
     """Get the current user's custom AI"""
     custom_ai_service = CustomAIService(session)
+    logger.info(f"Fetching custom AI for user: {current_user.id}")
     custom_ai = await custom_ai_service.get_custom_ai_by_user_id(current_user.id)
     
     if not custom_ai:
@@ -57,7 +59,7 @@ async def get_my_custom_ai(
 
 @router.get("/me/with-relations", response_model=CustomAIWithRelations)
 async def get_my_custom_ai_with_relations(
-    current_user: User = Depends(UserService.get_current_user),
+    current_user: CurrentUserDep,  
     session: AsyncSession = Depends(get_session),
 ):
     """Get the current user's custom AI with related data"""
@@ -76,7 +78,7 @@ async def get_my_custom_ai_with_relations(
 @router.get("/{custom_ai_id}", response_model=CustomAIOut)
 async def get_custom_ai(
     custom_ai_id: UUID,
-    current_user: User = Depends(UserService.get_current_user),
+    current_user: CurrentUserDep,  
     session: AsyncSession = Depends(get_session),
 ):
     """Get a custom AI by ID"""
@@ -103,7 +105,7 @@ async def get_custom_ai(
 async def update_custom_ai(
     custom_ai_id: UUID,
     custom_ai_data: CustomAIUpdate,
-    current_user: User = Depends(UserService.get_current_user),
+    current_user: CurrentUserDep,  
     session: AsyncSession = Depends(get_session),
 ):
     """Update a custom AI"""
@@ -130,7 +132,7 @@ async def update_custom_ai(
 @router.delete("/{custom_ai_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_custom_ai(
     custom_ai_id: UUID,
-    current_user: User = Depends(UserService.get_current_user),
+    current_user: CurrentUserDep,  
     session: AsyncSession = Depends(get_session),
 ):
     """Delete a custom AI"""
