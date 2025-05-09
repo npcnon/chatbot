@@ -2,6 +2,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from app.daos.base import BaseDao
+from app.models.custom_ai import CustomAI
 from app.models.personality import Personality
 
 
@@ -23,6 +24,16 @@ class PersonalityDao(BaseDao):
     async def get_by_ai_id(self, ai_id) -> Personality | None:
         statement = select(Personality).where(Personality.custom_ai_id == ai_id)
         return await self.session.scalar(statement=statement)
+    
+    async def get_by_user_id(self, user_id: UUID) -> Personality | None:
+        """Get a personality by user ID"""
+        # Join CustomAI to get the user_id
+        result = await self.session.execute(
+            select(Personality)
+            .join(CustomAI, Personality.custom_ai_id == CustomAI.id)
+            .where(CustomAI.user_id == user_id)
+        )
+        return result.scalars().first()
 
     async def get_all(self) -> list[Personality]:
         statement = select(Personality).order_by(Personality.id)

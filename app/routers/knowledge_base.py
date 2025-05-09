@@ -102,6 +102,16 @@ async def get_knowledge_base_by_ai(
         
     return knowledge_base
 
+@router.get("/by-user", response_model=list[KnowledgeBaseOut])
+async def get_knowledge_bases_by_user(
+    current_user: CurrentUserDep,
+    session: AsyncSession = Depends(get_session),
+):
+    """Get all knowledge base items for the current user"""
+    knowledge_base_service = KnowledgeBaseService(session)
+    knowledge_bases = await knowledge_base_service.get_knowledge_bases_by_user_id(current_user.id)
+    return knowledge_bases
+
 
 @router.put("/{knowledge_base_id}", response_model=KnowledgeBaseOut)
 async def update_knowledge_base(

@@ -27,8 +27,10 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "CHATBOT(DEMO VERSION)"
     CORS_ORIGINS: List[str] = [  
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
     ]
+
     # COOKIE_DOMAIN = None  # Set to your domain in production (e.g. ".example.com")
     # COOKIE_SECURE = False  # Set to True in production for HTTPS only
     # COOKIE_SAMESITE = "lax"  # Options: "lax", "strict", or "none" (with secure=True)
