@@ -23,6 +23,10 @@ class PersonalityService:
     async def get_personality_by_ai_id(self, ai_id: UUID) -> Personality | None:
         """Get a personality by custom AI ID"""
         return await self.personality_dao.get_by_ai_id(ai_id)
+    
+    async def get_personality_by_user_id(self, user_id: UUID) -> Personality | None:
+        """Get a personality by user ID"""
+        return await self.personality_dao.get_by_user_id(user_id)
 
     async def update_personality(self, personality_id: UUID, personality_data: PersonalityUpdate) -> Personality | None:
         """Update a personality"""

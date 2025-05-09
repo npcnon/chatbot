@@ -23,6 +23,10 @@ class KnowledgeBaseService:
     async def get_knowledge_base_by_ai_id(self, ai_id: UUID) -> KnowledgeBase | None:
         """Get a knowledge base by custom AI ID"""
         return await self.knowledge_base_dao.get_by_ai_id(ai_id)
+    
+    async def get_knowledge_bases_by_user_id(self, user_id: UUID) -> list[KnowledgeBase]:
+        """Get all knowledge bases for a specific user ID"""
+        return await self.knowledge_base_dao.get_all_by_user_id(user_id)
 
     async def update_knowledge_base(self, knowledge_base_id: UUID, knowledge_base_data: KnowledgeBaseUpdate) -> KnowledgeBase | None:
         """Update a knowledge base"""

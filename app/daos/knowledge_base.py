@@ -2,6 +2,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from app.daos.base import BaseDao
+from app.models.custom_ai import CustomAI
 from app.models.knowledge_base import KnowledgeBase
 
 
@@ -24,6 +25,15 @@ class KnowledgeBaseDao(BaseDao):
         statement = select(KnowledgeBase).where(KnowledgeBase.custom_ai_id == ai_id).order_by(KnowledgeBase.id)
         result = await self.session.execute(statement=statement)
         return result.scalars().all()
+    
+    async def get_all_by_user_id(self, user_id: UUID) -> list[KnowledgeBase]:
+        """Get all knowledge bases for a specific user ID"""
+        result = await self.session.execute(
+            select(KnowledgeBase)
+            .join(CustomAI, KnowledgeBase.custom_ai_id == CustomAI.id)
+            .where(CustomAI.user_id == user_id)
+        )
+        return list(result.scalars().all())
 
     async def get_all(self) -> list[KnowledgeBase]:
         statement = select(KnowledgeBase).order_by(KnowledgeBase.id)
