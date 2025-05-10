@@ -1,6 +1,5 @@
 from fastapi import Depends, HTTPException, status, Response, Cookie, Request
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordRequestForm
 from uuid import UUID
 from datetime import datetime, timedelta
 from typing import Annotated, Optional
@@ -68,29 +67,28 @@ class UserService:
         _user = await self.user_dao.get_by_email(email)
         return _user if _user else None
 
-    async def login(self, form_data: OAuth2PasswordRequestForm, response: Response) -> Token:
-        _user = await self.authenticate_user(form_data.username, form_data.password)
+    async def login(self, username: str, password: str, response: Response) -> Token:
+        """Login user, validate credentials, and return tokens."""
+        _user = await self.authenticate_user(username, password)
         if not _user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Incorrect email or password",
             )
 
-        # Create access token
+        # The rest of your login logic remains the same
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = UtilsService.create_access_token(
             data={"sub": _user.email, "type": "access"}, 
             expires_delta=access_token_expires
         )
         
-        # Create refresh token with longer expiration
-        refresh_token_expires = timedelta(days=7)  # Typically longer than access token
+        refresh_token_expires = timedelta(days=7)
         refresh_token = UtilsService.create_access_token(
             data={"sub": _user.email, "type": "refresh"},
             expires_delta=refresh_token_expires
         )
 
-        # Get cookie settings with fallbacks for backward compatibility
         secure_cookies = getattr(settings, 'SECURE_COOKIES', False)
         samesite = getattr(settings, 'COOKIE_SAMESITE', 'lax')
         
@@ -112,16 +110,16 @@ class UserService:
             secure=secure_cookies,
             samesite=samesite,
             max_age=int(refresh_token_expires.total_seconds()),
-            path="/"  # Changed to root path to be available for all requests
+            path="/"
         )
         
-        # Return tokens in the response body for initial setup
         token_data = {
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "Bearer",
         }
         return Token(**token_data)
+
 
     async def refresh_token(self, refresh_token: str, response: Response = None) -> Token:
         """

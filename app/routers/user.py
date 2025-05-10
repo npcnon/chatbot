@@ -23,12 +23,12 @@ async def register_user(
 @router.post("/token", response_model=Token)
 async def login(
     response: Response,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    login_data: LoginRequest,  # Change to accept JSON request body
     session: AsyncSession = Depends(get_session),
 ):
     """Login endpoint that sets cookies and returns tokens"""
     user_service = UserService(session)
-    token = await user_service.login(form_data, response)
+    token = await user_service.login(login_data.username, login_data.password, response)
     
     # Return tokens only
     return token

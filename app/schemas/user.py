@@ -11,7 +11,10 @@ class UserBase(BaseModel):
 class UserIn(UserBase):
     password: str
 
-
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+    
 class UserOut(UserBase):
     id: UUID
 
