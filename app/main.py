@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app import __version__
-from app.middleware.request_logger import RequestLoggingMiddleware
+# from app.middleware.request_logger import RequestLoggingMiddleware
 from app.routers.api_router import api_router
 from app.settings import settings
 from app.db import engine 
@@ -27,7 +27,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(RequestLoggingMiddleware)
+# app.add_middleware(RequestLoggingMiddleware)
 # Update CORS settings to specify frontend origins
 # Note: Using ["*"] with allow_credentials=True is not allowed for security reasons
 logger.info(f"Cors origins: {settings.CORS_ORIGINS}")
