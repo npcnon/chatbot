@@ -31,14 +31,19 @@ app = FastAPI(
 # Update CORS settings to specify frontend origins
 # Note: Using ["*"] with allow_credentials=True is not allowed for security reasons
 logger.info(f"Cors origins: {settings.CORS_ORIGINS}")
+origins = [
+    "http://localhost:3000",
+    "http://localhost",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    # Replace ["*"] with your frontend URLs in production
-    allow_origins=settings.CORS_ORIGINS if hasattr(settings, "CORS_ORIGINS") else ["http://localhost:3000"],
-    allow_credentials=True,  # Required for cookies to work
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 
