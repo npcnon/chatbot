@@ -1,25 +1,33 @@
-from starlette.responses import Response
+# app/middleware/request_logger.py
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import Response
 from loguru import logger
 import time
+import json
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
 
-        # Read request body
-        req_body = await request.body()
-        request._receive = lambda: {"type": "http.request", "body": req_body}
+        # Clone request body safely
+        body = await request.body()
+        req_body = body.decode("utf-8", errors="replace")
+
+        # Trick to re-inject body into the stream
+        async def receive():
+            return {"type": "http.request", "body": body, "more_body": False}
+        request._receive = receive
 
         response = await call_next(request)
 
-        # Read response body
+        # Capture response body
         resp_body = b""
         async for chunk in response.body_iterator:
             resp_body += chunk
 
-        # Create a new response to replace the original
+        # Reconstruct response
         response = Response(
             content=resp_body,
             status_code=response.status_code,
@@ -27,8 +35,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             media_type=response.media_type
         )
 
-        logger.info(f"{request.method} {request.url.path} - {response.status_code} - {time.time() - start_time:.2f}s")
-        logger.debug(f"Request body: {req_body.decode('utf-8')}")
-        logger.debug(f"Response body: {resp_body.decode('utf-8')}")
+        duration = time.time() - start_time
+        logger.info(f"{request.method} {request.url.path} - {response.status_code} - {duration:.2f}s")
+        logger.debug(f"Request body: {req_body}")
+        logger.debug(f"Response body: {resp_body.decode('utf-8', errors='replace')}")
 
         return response
