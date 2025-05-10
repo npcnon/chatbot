@@ -33,7 +33,7 @@ logger.info(f"CORS settings: {settings.CORS_ORIGINS}")
 app.add_middleware(
     CORSMiddleware,
     # Replace ["*"] with your frontend URLs in production
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,  # Required for cookies to work
     allow_methods=["*"],
     allow_headers=["*"],
