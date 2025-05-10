@@ -1,3 +1,4 @@
+import os
 from fastapi import Depends, HTTPException, status, Response, Cookie, Request
 from fastapi.responses import JSONResponse
 from uuid import UUID
@@ -88,9 +89,13 @@ class UserService:
             data={"sub": _user.email, "type": "refresh"},
             expires_delta=refresh_token_expires
         )
-
-        secure_cookies = getattr(settings, 'SECURE_COOKIES', False)
-        samesite = getattr(settings, 'COOKIE_SAMESITE', 'lax')
+        is_production = os.environ.get("ENVIRONMENT", "development") == "production"
+        if is_production:
+            secure_cookies = getattr(settings, 'SECURE_COOKIES', True)
+            samesite = getattr(settings, 'COOKIE_SAMESITE', 'none')
+        else:
+            secure_cookies = False
+            samesite = 'lax'
         
         # Set cookies
         response.set_cookie(
