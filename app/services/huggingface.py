@@ -95,7 +95,7 @@ User: {user_text} [/INST]"""
                 response = client.text_generation(
                     prompt,
                     max_new_tokens=512,
-                    temperature=0.1,
+                    temperature=0.8,
                     return_full_text=False  # Only return the generated text, not the prompt
                 )
                 
@@ -202,7 +202,7 @@ User: {user_text} [/INST]"""
             response = client.text_generation(
                 prompt,
                 max_new_tokens=512,
-                temperature=0.1,
+                temperature=0.8,
                 return_full_text=False
             )
             
