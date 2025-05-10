@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     ]
 
     # Cookie settings
-    SECURE_COOKIES: bool = False  # Set to True in production for HTTPS only
+    SECURE_COOKIES: bool = True  # Set to True in production for HTTPS only
     COOKIE_DOMAIN: Optional[str] = None  # Set to your domain in production (e.g. ".example.com")
     COOKIE_SAMESITE: str = "lax"  # Options: "lax", "strict", or "none" (with secure=True)
 
