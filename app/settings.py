@@ -1,6 +1,6 @@
 import secrets
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,9 +31,11 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000"
     ]
 
-    # COOKIE_DOMAIN = None  # Set to your domain in production (e.g. ".example.com")
-    # COOKIE_SECURE = False  # Set to True in production for HTTPS only
-    # COOKIE_SAMESITE = "lax"  # Options: "lax", "strict", or "none" (with secure=True)
+    # Cookie settings
+    SECURE_COOKIES: bool = False  # Set to True in production for HTTPS only
+    COOKIE_DOMAIN: Optional[str] = None  # Set to your domain in production (e.g. ".example.com")
+    COOKIE_SAMESITE: str = "lax"  # Options: "lax", "strict", or "none" (with secure=True)
+
 
 @lru_cache
 def get_settings():

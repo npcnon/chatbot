@@ -8,12 +8,9 @@ from app.db import get_session
 from app.schemas.token import Token
 from app.schemas.user import UserIn, UserOut, ChangePasswordIn
 from app.services.user import UserService, CurrentUserDep
-from app.services.utils import UtilsService
-from app.middleware.csrf import csrf_protection
 
 router = APIRouter(prefix="/user", tags=["user"])
 
-#TODO: test user, also fix method not allowed on routes
 @router.post("/register", status_code=201)
 async def register_user(
     user_data: UserIn,
@@ -30,30 +27,11 @@ async def login(
     session: AsyncSession = Depends(get_session),
 ):
     """Login endpoint that sets cookies and returns tokens"""
-    # Generate CSRF token for forms
-    csrf_token = UtilsService.generate_csrf_token()
-    
-    # Set in cookie for CSRF protection
-    response.set_cookie(
-        key="csrf_token",
-        value=csrf_token,
-        httponly=False,  # Must be accessible from JS
-        secure=True,     # HTTPS only
-        samesite="lax",
-        max_age=86400,   # 1 day
-        path="/"
-    )
-    
-    # Log in and set auth cookies
     user_service = UserService(session)
     token = await user_service.login(form_data, response)
     
-    # Include CSRF token in response
-    return {
-        "access_token": token.access_token,
-        "token_type": token.token_type,
-        "csrf_token": csrf_token
-    }
+    # Return tokens only
+    return token
 
 
 @router.post("/refresh", response_model=Token)
@@ -88,10 +66,8 @@ async def change_password(
     password_data: ChangePasswordIn,
     current_user: CurrentUserDep,
     session: AsyncSession = Depends(get_session),
-    csrf_check: None = Depends(csrf_protection),
-    x_csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
 ):
-    """Change user password with CSRF protection"""
+
     user_service = UserService(session)
     return await user_service.change_password(password_data, current_user)
 
@@ -111,8 +87,6 @@ async def get_all_users(
 async def delete_all_users(
     current_user: CurrentUserDep,  # Only authenticated users
     session: AsyncSession = Depends(get_session),
-    # csrf_check: None = Depends(csrf_protection),
-    # x_csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
 ):
     # TODO: Add role check here
     user_service = UserService(session)
@@ -135,8 +109,6 @@ async def delete_user_by_id(
     user_id: str,
     current_user: CurrentUserDep,  # Only authenticated users
     session: AsyncSession = Depends(get_session),
-    csrf_check: None = Depends(csrf_protection),
-    x_csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
 ):
     # TODO: Add role check or self check here
     user_service = UserService(session)

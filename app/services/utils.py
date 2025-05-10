@@ -34,15 +34,4 @@ class UtilsService:
         encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         return encoded_jwt
 
-    @staticmethod
-    def generate_csrf_token() -> str:
-        """Generate a CSRF token for forms"""
-        from secrets import token_hex
-        return token_hex(16)  # 32 character hex string
 
-    @staticmethod
-    def verify_csrf_token(request_token: str, stored_token: str) -> bool:
-        """Verify that the CSRF token from the request matches the stored one"""
-        if not request_token or not stored_token:
-            return False
-        return request_token == stored_token

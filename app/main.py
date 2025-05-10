@@ -6,7 +6,6 @@ from sqlalchemy import text
 from app import __version__
 from app.middleware.request_logger import RequestLoggingMiddleware
 from app.routers.api_router import api_router
-from app.middleware.csrf import CSRFMiddleware
 from app.settings import settings
 from app.db import engine 
 from contextlib import asynccontextmanager
@@ -40,8 +39,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add CSRF protection middleware
-# app.add_middleware(CSRFMiddleware)
+
 
 # Include API router (existing code)
 app.include_router(api_router)

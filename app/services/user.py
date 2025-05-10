@@ -39,7 +39,6 @@ class UserService:
             )
 
         try:
-
             user_data.password = UtilsService.get_password_hash(user_data.password)
             new_user = await self.user_dao.create(user_data.model_dump())
             
@@ -47,7 +46,6 @@ class UserService:
             custom_ai_data = CustomAICreate(user_id=new_user.id)
             await self.custom_ai_service.create_custom_ai(custom_ai_data)
             
-   
             return JSONResponse(
                 content={"message": "User created successfully"},
                 status_code=status.HTTP_201_CREATED,
@@ -92,14 +90,18 @@ class UserService:
             expires_delta=refresh_token_expires
         )
 
+        # Get cookie settings with fallbacks for backward compatibility
+        secure_cookies = getattr(settings, 'SECURE_COOKIES', False)
+        samesite = getattr(settings, 'COOKIE_SAMESITE', 'lax')
+        
         # Set cookies
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,  # For HTTPS
-            samesite="lax",  # Prevents CSRF
-            max_age=access_token_expires.total_seconds(),
+            secure=secure_cookies,
+            samesite=samesite,
+            max_age=int(access_token_expires.total_seconds()),
             path="/"
         )
         
@@ -107,13 +109,13 @@ class UserService:
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=refresh_token_expires.total_seconds(),
-            path="/api/v1/user/refresh"  # Only sent to refresh endpoint
+            secure=secure_cookies,
+            samesite=samesite,
+            max_age=int(refresh_token_expires.total_seconds()),
+            path="/"  # Changed to root path to be available for all requests
         )
         
-        # Also return tokens in the response body for initial setup
+        # Return tokens in the response body for initial setup
         token_data = {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -153,15 +155,19 @@ class UserService:
                 expires_delta=access_token_expires
             )
             
+            # Get cookie settings with fallbacks
+            secure_cookies = getattr(settings, 'SECURE_COOKIES', False)
+            samesite = getattr(settings, 'COOKIE_SAMESITE', 'lax')
+            
             # Set new access token in cookie
             if response:
                 response.set_cookie(
                     key="access_token",
                     value=access_token,
                     httponly=True,
-                    secure=True,
-                    samesite="lax",
-                    max_age=access_token_expires.total_seconds(),
+                    secure=secure_cookies,
+                    samesite=samesite,
+                    max_age=int(access_token_expires.total_seconds()),
                     path="/"
                 )
             
@@ -180,7 +186,7 @@ class UserService:
         Clear authentication cookies
         """
         response.delete_cookie(key="access_token", path="/")
-        response.delete_cookie(key="refresh_token", path="/api/v1/user/refresh")
+        response.delete_cookie(key="refresh_token", path="/")
         
         return JSONResponse(
             content={"message": "Logged out successfully"},
