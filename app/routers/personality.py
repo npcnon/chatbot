@@ -94,6 +94,22 @@ async def get_personality(
         
     return personality
 
+@router.get("/by-user", response_model=PersonalityOut)
+async def get_personality_by_user(
+    current_user: CurrentUserDep,
+    session: AsyncSession = Depends(get_session),
+):
+    """Get personality for the current user"""
+    personality_service = PersonalityService(session)
+    personality = await personality_service.get_personality_by_user_id(current_user.id)
+    
+    if not personality:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Personality not found for this user"
+        )
+        
+    return personality
 
 
 @router.get("/by-ai/{ai_id}", response_model=PersonalityOut)
