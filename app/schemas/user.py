@@ -1,35 +1,50 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
-from uuid import UUID
+from pydantic import BaseModel, EmailStr, Field, UUID4
+from typing import Optional
+from datetime import datetime
+
 
 class UserBase(BaseModel):
     email: EmailStr
-    first_name: str | None
-    last_name: str | None
-    model_config = ConfigDict(from_attributes=True)
 
 
-class UserIn(UserBase):
+class UserCreate(UserBase):
+    password: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    password: Optional[str] = None
+
+
+class UserInDBBase(UserBase):
+    id: UUID4
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class User(UserInDBBase):
+    """Return to client"""
+    pass
+
+
+class UserInDB(UserInDBBase):
+    """Stored in DB"""
     password: str
 
 
-class UserOut(UserBase):
-    id: UUID
+class TokenPayload(BaseModel):
+    sub: str  # user_id
+    exp: datetime
+    type: str  # "access" or "refresh"
 
 
-class ChangePasswordIn(BaseModel):
-    old_password: str
-    new_password: str
-
-    @field_validator("old_password")
-    @classmethod
-    def old_password_is_not_blank(cls, value):
-        if not value:
-            raise ValueError("Old password field can't be blank!!!")
-        return value
-
-    @field_validator("new_password")
-    @classmethod
-    def new_password_is_not_blank(cls, value):
-        if not value:
-            raise ValueError("New password field can't be blank!!!")
-        return value
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str

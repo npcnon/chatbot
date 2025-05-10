@@ -1,3 +1,4 @@
+import os
 import secrets
 from functools import lru_cache
 from typing import List, Optional
@@ -19,9 +20,10 @@ class Settings(BaseSettings):
     PGADMIN_EMAIL: str
     PGADMIN_PASSWORD: str
 
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY: str = os.environ.get("SECRET_KEY", "supersecretkey")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 3600
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     DATE_FORMAT: str = "%Y-%m-%d"
 
     API_V1_STR: str = "/api/v1"
@@ -32,10 +34,8 @@ class Settings(BaseSettings):
     ]
 
     # Cookie settings
-    SECURE_COOKIES: bool = False  # Set to True in production for HTTPS only
-    COOKIE_DOMAIN: Optional[str] = None  # Set to your domain in production (e.g. ".example.com")
-    COOKIE_SAMESITE: str = "lax"  # Options: "lax", "strict", or "none" (with secure=True)
-
+    COOKIE_SAMESITE: str = "none"  
+    COOKIE_SECURE: bool = True
 
 @lru_cache
 def get_settings():
