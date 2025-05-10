@@ -10,20 +10,11 @@ from app.db import engine
 from contextlib import asynccontextmanager
 from loguru import logger
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    try:
-        async with engine.begin() as conn:
-            await conn.execute(text("SELECT 1"))
-        logger.success("✅ Successfully connected to the database.")
-    except Exception as e:
-        logger.error(f"❌ Database connection failed: {e}")
-    yield
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    version="0.1.0", 
-    lifespan=lifespan,
+    version="0.1.0"
 )
 
 
