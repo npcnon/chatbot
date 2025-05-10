@@ -30,6 +30,7 @@ app = FastAPI(
 app.add_middleware(RequestLoggingMiddleware)
 # Update CORS settings to specify frontend origins
 # Note: Using ["*"] with allow_credentials=True is not allowed for security reasons
+logger.info(f"Cors origins: {settings.CORS_ORIGINS}")
 app.add_middleware(
     CORSMiddleware,
     # Replace ["*"] with your frontend URLs in production
