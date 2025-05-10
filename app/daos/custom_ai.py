@@ -4,6 +4,8 @@ from uuid import UUID
 from app.daos.base import BaseDao
 from app.models.custom_ai import CustomAI
 from app.models.personality import Personality
+
+
 class CustomAIDao(BaseDao):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
@@ -26,6 +28,12 @@ class CustomAIDao(BaseDao):
             .where(Personality.id == personality_id)
         )
         return await self.session.scalar(statement=statement)
+        
+    async def get_by_user_id(self, user_id: UUID) -> list[CustomAI]:
+        """Get all custom AIs for a specific user"""
+        statement = select(CustomAI).where(CustomAI.user_id == user_id).order_by(CustomAI.id)
+        result = await self.session.execute(statement=statement)
+        return result.scalars().all()
 
     async def get_all(self) -> list[CustomAI]:
         statement = select(CustomAI).order_by(CustomAI.id)

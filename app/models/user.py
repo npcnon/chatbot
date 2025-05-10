@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from app.models.custom_ai import CustomAI
+    from app.models.api_key import ApiKey
 
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,6 +24,12 @@ class User(Base):
     custom_ai: Mapped["CustomAI"] = relationship(
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=False
+    )
+
+    api_keys: Mapped[list["ApiKey"]] = relationship(
+        back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=False
     )

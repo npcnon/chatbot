@@ -18,7 +18,13 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-        finally:
-            await session.close()
+            # This will only execute after the request is complete
+            # Commit any pending changes if no exception occurred
+            await session.commit()
+        except Exception:
+            # Rollback in case of exception
+            await session.rollback()
+            raise
+        # The session.close() is handled by the context manager (async with)
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
