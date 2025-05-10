@@ -34,6 +34,7 @@ logger.info(f"Cors origins: {settings.CORS_ORIGINS}")
 origins = [
     "http://localhost:3000",
     "http://localhost",
+    "https://non-chatbot.vercel.app",
 ]
 
 app.add_middleware(
