@@ -94,7 +94,7 @@ User: {user_text} [/INST]"""
                 # Generate response using the task-specific method
                 response = client.text_generation(
                     prompt,
-                    max_new_tokens=256,
+                    max_new_tokens=512,
                     temperature=0.1,
                     return_full_text=False  # Only return the generated text, not the prompt
                 )
@@ -201,7 +201,7 @@ User: {user_text} [/INST]"""
             # Generate response
             response = client.text_generation(
                 prompt,
-                max_new_tokens=256,
+                max_new_tokens=512,
                 temperature=0.1,
                 return_full_text=False
             )
