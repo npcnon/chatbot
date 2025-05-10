@@ -4,7 +4,6 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app import __version__
-# from app.middleware.request_logger import RequestLoggingMiddleware
 from app.routers.api_router import api_router
 from app.settings import settings
 from app.db import engine 
@@ -27,26 +26,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# app.add_middleware(RequestLoggingMiddleware)
+
 # Update CORS settings to specify frontend origins
 # Note: Using ["*"] with allow_credentials=True is not allowed for security reasons
-logger.info(f"Cors origins: {settings.CORS_ORIGINS}")
-origins = [
-    "http://localhost:3000",
-    "http://localhost",
-    "https://non-chatbot.vercel.app",
-]
-
+logger.info(f"CORS settings: {settings.CORS_ORIGINS}")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    # Replace ["*"] with your frontend URLs in production
+    allow_origins=settings.CORS_ORIGINS if hasattr(settings, "CORS_ORIGINS") else ["http://localhost:3000"],
+    allow_credentials=True,  # Required for cookies to work
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-
+# Add CSRF protection middleware
+# app.add_middleware(CSRFMiddleware)
 
 # Include API router (existing code)
 app.include_router(api_router)

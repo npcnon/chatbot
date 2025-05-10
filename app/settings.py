@@ -28,7 +28,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "CHATBOT(DEMO VERSION)"
     CORS_ORIGINS: List[str] = [  
         "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "https://non-chatbot.vercel.app"
     ]
 
     # Cookie settings
