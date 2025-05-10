@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     ]
 
     # Cookie settings
-    COOKIE_SAMESITE: str = "none"  
-    COOKIE_SECURE: bool = True
+    COOKIE_SAMESITE: str = "lax"  
+    COOKIE_SECURE: bool = False
 
 @lru_cache
 def get_settings():
