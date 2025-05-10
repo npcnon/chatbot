@@ -29,14 +29,14 @@ app = FastAPI(
 
 # Update CORS settings to specify frontend origins
 # Note: Using ["*"] with allow_credentials=True is not allowed for security reasons
-logger.info(f"CORS settings: {settings.CORS_ORIGINS}")
 app.add_middleware(
     CORSMiddleware,
-    # Replace ["*"] with your frontend URLs in production
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,  # Required for cookies to work
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Include OPTIONS
+    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+    expose_headers=["Content-Type", "Set-Cookie"],
+    max_age=86400,  # Cache preflight requests for 24 hours
 )
 
 # Add CSRF protection middleware
