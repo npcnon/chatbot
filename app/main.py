@@ -25,8 +25,15 @@ app.add_middleware(
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", 
-                  "X-Requested-With", "X-CSRF-Token"],  # Add any headers your frontend sends
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+        "X-CSRF-Token",
+        "api-key" 
+    ],
     expose_headers=["Content-Type", "Set-Cookie"],
     max_age=86400,  # Cache preflight requests for 24 hours
 )
