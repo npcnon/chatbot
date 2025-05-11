@@ -10,7 +10,7 @@ from app.daos.personality import PersonalityDao
 from app.daos.knowledge_base import KnowledgeBaseDao
 from app.daos.api_key import ApiKeyDao
 from app.services.api_key import ApiKeyService
-from app.services.huggingface import HuggingFaceService
+from app.services.ai_service import HuggingFaceService
 
 router = APIRouter(
     prefix="/chat",
