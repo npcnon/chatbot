@@ -30,7 +30,8 @@ class Settings(BaseSettings):
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'https://non-chatbot.vercel.app',
-        'https://chatbot-o0ca.onrender.com'
+        'https://chatbot-o0ca.onrender.com',
+        'https://mhafric-portfolio.vercel.app'
     ]
 
     # Cookie settings
