@@ -4,7 +4,7 @@ from uuid import UUID
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 import traceback
-
+from openai import OpenAI
 from app.daos.custom_ai import CustomAIDao
 from app.daos.personality import PersonalityDao
 from app.daos.knowledge_base import KnowledgeBaseDao
@@ -12,6 +12,7 @@ from app.daos.api_key import ApiKeyDao
 from app.services.api_key import ApiKeyService
 from sqlalchemy.ext.asyncio import AsyncSession
 
+load_dotenv()
 class HuggingFaceService:
     """Service for interacting with HuggingFace models"""
     
@@ -27,7 +28,7 @@ class HuggingFaceService:
         self.api_key_dao = api_key_dao
         self.api_key_service = api_key_service
         self.hf_token = os.getenv("HF_TOKEN")
-        
+        self.kluster_key = os.getenv("KLUSTER_KEY")
     def get_inference_client(self, model_id: str):
         """Get a HuggingFace InferenceClient instance"""
         return InferenceClient(
@@ -67,38 +68,42 @@ class HuggingFaceService:
             knowledge_items = await self.knowledge_base_dao.get_by_ai_id(ai_id)
             knowledge_context = "\n\n".join([item.content for item in knowledge_items]) if knowledge_items else ""
             
-            # Format chat history
-            history_text = ""
-            for message in chat_history:
-                role = message["role"]
-                content = message["content"]
-                history_text += f"{role.capitalize()}: {content}\n"
-            
             # Log the model being used
             print(f"Using model: {custom_ai.ai_model}")
             
             try:
                 # Get the inference client
-                client = self.get_inference_client(custom_ai.ai_model)
-                
-                # Create the prompt
-                prompt = f"""[INST] {system_message}
-
-{knowledge_context}
-
-Conversation:
-{history_text}
-
-User: {user_text} [/INST]"""
-                
-                # Generate response using the task-specific method
-                response = client.text_generation(
-                    prompt,
-                    max_new_tokens=512,
-                    temperature=0.8,
-                    return_full_text=False  # Only return the generated text, not the prompt
+                client = OpenAI(
+                    api_key=self.kluster_key, 
+                    base_url="https://api.kluster.ai/v1"
                 )
-                
+
+                # Build the conversation
+                messages = [
+                    {"role": "system", "content": system_message},
+                ]
+
+                if knowledge_context:
+                    messages.append({"role": "system", "content": knowledge_context})
+
+                # Add chat history
+                if chat_history:
+                    messages.extend(chat_history)  # Add the chat history objects directly
+
+                # Add user prompt
+                messages.append({"role": "user", "content": user_text})
+
+                # Call the chat completion endpoint
+                response_obj = client.chat.completions.create(
+                    model=custom_ai.ai_model,
+                    messages=messages,
+                    temperature=0.4,
+                    max_tokens=512,
+                )
+
+                # Extract the response
+                response = response_obj.choices[0].message.content.strip()
+
                 # Clean up response
                 if "AI:" in response:
                     response = response.split("AI:")[-1].strip()
@@ -110,7 +115,7 @@ User: {user_text} [/INST]"""
                 return response, chat_history
                 
             except Exception as e:
-                print(f"Error in HuggingFace API call: {str(e)}")
+                print(f"Error in AI API call: {str(e)}")
                 print(traceback.format_exc())
                 
                 # Provide a fallback response
@@ -172,13 +177,6 @@ User: {user_text} [/INST]"""
         # Initialize chat history if not provided
         if chat_history is None:
             chat_history = []
-            
-        # Format chat history
-        history_text = ""
-        for message in chat_history:
-            role = message["role"]
-            content = message["content"]
-            history_text += f"{role.capitalize()}: {content}\n"
         
         # Determine which model to use (override or the one configured for the AI)
         model_id = model_override if model_override else custom_ai.ai_model
@@ -186,25 +184,36 @@ User: {user_text} [/INST]"""
         
         try:
             # Get the inference client
-            client = self.get_inference_client(model_id)
-            
-            # Create the prompt
-            prompt = f"""[INST] {system_message}
-
-{knowledge_context}
-
-Conversation:
-{history_text}
-
-User: {user_text} [/INST]"""
-            
-            # Generate response
-            response = client.text_generation(
-                prompt,
-                max_new_tokens=512,
-                temperature=0.8,
-                return_full_text=False
+            client = OpenAI(
+                api_key=self.kluster_key, 
+                base_url="https://api.kluster.ai/v1"
             )
+
+            # Build the conversation
+            messages = [
+                {"role": "system", "content": system_message},
+            ]
+
+            if knowledge_context:
+                messages.append({"role": "system", "content": knowledge_context})
+
+            # Add chat history
+            if chat_history:
+                messages.extend(chat_history)  # Add the chat history objects directly
+
+            # Add user prompt
+            messages.append({"role": "user", "content": user_text})
+
+            # Call the chat completion endpoint
+            response_obj = client.chat.completions.create(
+                model=model_id,  # Use the determined model_id
+                messages=messages,
+                temperature=0.4,
+                max_tokens=512,
+            )
+
+            # Extract the response
+            response = response_obj.choices[0].message.content.strip()
             
             # Clean up response
             if "AI:" in response:
