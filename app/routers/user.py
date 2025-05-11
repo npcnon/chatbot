@@ -1,14 +1,17 @@
+import os
 from fastapi import APIRouter, Depends, Response, Request, Form, Cookie, Header
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from dotenv import load_dotenv
+from app import settings
 from app.db import get_session
 from app.schemas.token import Token
 from app.schemas.user import LoginRequest, UserIn, UserOut, ChangePasswordIn
 from app.services.user import UserService, CurrentUserDep
 
+load_dotenv()
 router = APIRouter(prefix="/user", tags=["user"])
 
 @router.post("/register", status_code=201)
@@ -51,8 +54,28 @@ async def logout(
     session: AsyncSession = Depends(get_session),
 ):
     """Logout endpoint that clears auth cookies"""
-    user_service = UserService(session)
-    return await user_service.logout(response)
+
+    is_production = os.environ.get("ENVIRONMENT", "development") == "production"
+    secure_cookies = getattr(settings, 'SECURE_COOKIES', True) if is_production else False
+    samesite = getattr(settings, 'COOKIE_SAMESITE', 'none') if is_production else 'lax'
+
+    # Set expired cookies
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        samesite=samesite,
+        secure=secure_cookies,
+        httponly=True,
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",
+        samesite=samesite,
+        secure=secure_cookies,
+        httponly=True,
+    )
+
+    return {"message": "Logged out successfully"}
 
 
 @router.get("/me", response_model=UserOut)
