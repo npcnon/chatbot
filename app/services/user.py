@@ -184,17 +184,17 @@ class UserService:
         except JWTError:
             raise credentials_exception
 
-    async def logout(self, response: Response):
-        """
-        Clear authentication cookies
-        """
-        response.delete_cookie(key="access_token", path="/")
-        response.delete_cookie(key="refresh_token", path="/")
+    # async def logout(self, response: Response):
+    #     """
+    #     Clear authentication cookies
+    #     """
+    #     response.delete_cookie(key="access_token")
+    #     response.delete_cookie(key="refresh_token")
         
-        return JSONResponse(
-            content={"message": "Logged out successfully"},
-            status_code=status.HTTP_200_OK,
-        )
+    #     return JSONResponse(
+    #         content={"message": "Logged out successfully"},
+    #         status_code=status.HTTP_200_OK,
+    #     )
 
     async def get_current_user(self, access_token: str) -> UserModel:
         """
