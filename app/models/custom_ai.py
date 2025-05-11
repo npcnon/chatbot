@@ -20,8 +20,8 @@ class CustomAI(Base):
 
     ai_model: Mapped[str] = mapped_column(
         String(255), 
-        default="mistralai/Mistral-7B-Instruct-v0.3",
-        server_default="mistralai/Mistral-7B-Instruct-v0.3"
+        default="deepseek-ai/DeepSeek-V3",
+        server_default="deepseek-ai/DeepSeek-V3"
     )    
     knowledge_items: Mapped[list["KnowledgeBase"]] = relationship(
         back_populates="custom_ai",
