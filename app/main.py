@@ -17,6 +17,9 @@ app = FastAPI(
     version="0.1.0"
 )
 
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the base URL"}
 
 # Update CORS settings to specify frontend origins
 # Note: Using ["*"] with allow_credentials=True is not allowed for security reasons
